@@ -7,28 +7,54 @@ from flcore.clients.clientbase import Client
 import torch.nn.functional as F
 from sklearn.preprocessing import label_binarize
 from sklearn import metrics
+from collections import Counter
 
 
 class clientROD(Client):
     def __init__(self, args, id, train_samples, test_samples, **kwargs):
         super().__init__(args, id, train_samples, test_samples, **kwargs)
-        
+
         self.loss = nn.CrossEntropyLoss()
         self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.learning_rate)
-        
+
         self.pred = copy.deepcopy(self.model.predictor)
         self.opt_pred = torch.optim.SGD(self.pred.parameters(), lr=self.learning_rate)
 
         self.sample_per_class = torch.zeros(self.num_classes)
+        self.trainloader = self.load_train_data()
+        self.testloader = self.load_test_data()
+        ###
+        # print('remove below')
+        # ys = []
+        # for _, y in self.trainloader:
+        #     ys.append(y)
+        # ys = torch.cat(ys).numpy()
+        # d = Counter(ys)
+        # dd = {}
+        # for k in sorted(d.keys()):
+        #     dd[k] = d[k] / np.sum(ys)
+        # print('id', id, 'training sample:', len(ys))
+        # print(dd)
+        # print(len(self.testloader))
+        # ys = []
+        # for _, y in self.testloader:
+        #     ys.append(y)
+        # ys = torch.cat(ys).numpy()
+        # d = Counter(ys)
+        # dd = {}
+        # for k in sorted(d.keys()):
+        #     dd[k] = d[k] / np.sum(ys)
+        # print('testing sample:', len(ys))
+        # print(dd)
+        ###
         for x, y in self.trainloader:
             for yy in y:
                 self.sample_per_class[yy.item()] += 1
         self.sample_per_class = self.sample_per_class / torch.sum(self.sample_per_class)
 
-
     def train(self):
         trainloader = self.load_train_data()
-        
+
         start_time = time.time()
 
         # self.model.to(self.device)
@@ -39,13 +65,14 @@ class clientROD(Client):
             max_local_steps = np.random.randint(1, max_local_steps // 2)
 
         for step in range(max_local_steps):
+            print(self.id, step)
             for i, (x, y) in enumerate(trainloader):
                 if type(x) == type([]):
                     x[0] = x[0].to(self.device)
                 else:
                     x = x.to(self.device)
                 y = y.to(self.device)
-                rep = self.model(x, rep=True)
+                rep = self.model(x, return_embedding=True)
                 out_g = self.model.predictor(rep)
                 loss_bsm = balanced_softmax_loss(y, out_g, self.sample_per_class)
                 self.optimizer.zero_grad()
@@ -72,7 +99,7 @@ class clientROD(Client):
         test_num = 0
         y_prob = []
         y_true = []
-        
+
         with torch.no_grad():
             for x, y in self.testloader:
                 if type(x) == type([]):
@@ -80,7 +107,7 @@ class clientROD(Client):
                 else:
                     x = x.to(self.device)
                 y = y.to(self.device)
-                rep = self.model(x, rep=True)
+                rep = self.model(x, return_embedding=True)
                 out_g = self.model.predictor(rep)
                 out_p = self.pred(rep.detach())
                 output = out_g.detach() + out_p
@@ -92,7 +119,7 @@ class clientROD(Client):
                 nc = self.num_classes
                 if self.num_classes == 2:
                     nc += 1
-                lb = label_binarize(y.detach().cpu().numpy(), np.arange(nc))
+                lb = label_binarize(y.detach().cpu().numpy(), classes=np.arange(nc))
                 if self.num_classes == 2:
                     lb = lb[:, :2]
                 y_true.append(lb)
@@ -101,7 +128,7 @@ class clientROD(Client):
         y_true = np.concatenate(y_true, axis=0)
 
         auc = metrics.roc_auc_score(y_true, y_prob, average='micro')
-        
+
         return test_acc, test_num, auc
 
 

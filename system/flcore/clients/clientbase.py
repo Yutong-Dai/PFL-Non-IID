@@ -45,7 +45,6 @@ class Client(object):
         self.dp_sigma = args.dp_sigma
         self.sample_rate = self.batch_size / self.train_samples
 
-
     def load_train_data(self, batch_size=None):
         if batch_size == None:
             batch_size = self.batch_size
@@ -56,8 +55,8 @@ class Client(object):
         if batch_size == None:
             batch_size = self.batch_size
         test_data = read_client_data(self.dataset, self.id, is_train=False)
-        return DataLoader(test_data, batch_size, drop_last=False, shuffle=True)
-        
+        return DataLoader(test_data, batch_size, drop_last=False, shuffle=False)
+
     def set_parameters(self, model):
         for new_param, old_param in zip(model.parameters(), self.model.parameters()):
             old_param.data = new_param.data.clone()
@@ -81,7 +80,7 @@ class Client(object):
         test_num = 0
         y_prob = []
         y_true = []
-        
+
         with torch.no_grad():
             for x, y in testloaderfull:
                 if type(x) == type([]):
@@ -104,7 +103,7 @@ class Client(object):
         y_true = np.concatenate(y_true, axis=0)
 
         auc = metrics.roc_auc_score(y_true, y_prob, average='micro')
-        
+
         return test_acc, test_num, auc
 
     def train_metrics(self):
@@ -145,7 +144,6 @@ class Client(object):
     #     y = y.to(self.device)
 
     #     return x, y
-
 
     def save_item(self, item, item_name, item_path=None):
         if item_path == None:
