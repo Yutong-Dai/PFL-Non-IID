@@ -65,7 +65,7 @@ class clientROD(Client):
             max_local_steps = np.random.randint(1, max_local_steps // 2)
 
         for step in range(max_local_steps):
-            print(self.id, step)
+            # print(self.id, step)
             for i, (x, y) in enumerate(trainloader):
                 if type(x) == type([]):
                     x[0] = x[0].to(self.device)

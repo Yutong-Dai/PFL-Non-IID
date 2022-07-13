@@ -1,0 +1,48 @@
+nohup: ignoring input
+==================================================
+Algorithm: FedROD
+Local batch size: 64
+Local steps: 5
+Local learing rate: 0.01
+Total number of clients: 20
+Clients join in each round: 0.4
+Client drop rate: 0.0
+Time select: False
+Time threthold: 10000
+Global rounds: 100
+Running times: 1
+Dataset: Cifar100
+Local model: cnn
+Using device: cuda
+use yd partition:1
+Cuda device id: 1
+==================================================
+
+============= Running time: 0th =============
+Creating server and clients ...
+Total Trian samples 9980 Total test samples 15008
+
+Join ratio / total clients: 0.4 / 20
+Finished creating server and clients.
+
+-------------Round number: 0-------------
+
+Evaluate local models
+Averaged Train Loss: 4.2647
+Averaged Test Accurancy: 0.2555
+Averaged Test AUC: 0.9101
+Std Test Accurancy: 0.0493
+Std Test AUC: 0.0222
+------------------------- time cost ------------------------- 9.17940068244934
+
+-------------Round number: 1-------------
+
+Evaluate local models
+Averaged Train Loss: 3.9100
+Averaged Test Accurancy: 0.3193
+Averaged Test AUC: 0.9415
+Std Test Accurancy: 0.0116
+Std Test AUC: 0.0081
+------------------------- time cost ------------------------- 8.729109048843384
+
+-------------Round number: 2-------------

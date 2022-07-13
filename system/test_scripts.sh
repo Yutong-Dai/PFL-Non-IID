@@ -14,5 +14,6 @@
 # nohup python -u main.py -lbs 64 -nc 20 -jr 0.4 -nb 100 -data Cifar100 -m cnn -algo FedAvg -gr 100 -did 0 -go reproduce --local_steps 5 --local_learning_rate 0.01> Cifar100_FedAvg.out 2>&1 &
 
 
-python -u main.py -lbs 64 -nc 20 -jr 0.4 -nb 100 -data Cifar100 -m cnn -algo FedPer -gr 100 -did 1 -go reproduce --local_steps 5 --local_learning_rate 0.01
-python -u main.py -lbs 64 -nc 20 -jr 0.4 -nb 100 -data Cifar100 -m cnn -algo FedAvg -gr 100 -did 1 -go reproduce --local_steps 5 --local_learning_rate 0.01
+nohup python -u main.py -lbs 64 -nc 20 -jr 0.4 -nb 100 -data Cifar100 -m cnn -algo FedPer -gr 100 -did 1 -go reproduce --local_steps 5 --local_learning_rate 0.01 --use_yd_datapartition 1 > Cifar100_FedPer_yd03_20_0.4.out 2>&1 &
+nohup python -u main.py -lbs 64 -nc 20 -jr 0.4 -nb 100 -data Cifar100 -m cnn -algo FedAvg -gr 100 -did 1 -go reproduce --local_steps 5 --local_learning_rate 0.01 --use_yd_datapartition 1 > Cifar100_FedAvg_yd03_20_0.4.out 2>&1 &
+nohup python -u main.py -lbs 64 -nc 20 -jr 0.4 -nb 100 -data Cifar100 -m cnn -algo FedROD -gr 100 -did 1 -go reproduce --local_steps 5 --local_learning_rate 0.01 --use_yd_datapartition 1 > Cifar100_FedROD_yd03_20_0.4.out 2>&1 &

@@ -12,7 +12,7 @@ class LocalModel(nn.Module):
         self.base = base
         self.predictor = predictor
 
-    def forward(self, x, return_embedding=True):
+    def forward(self, x, return_embedding=False):
         out = self.base(x)
         if return_embedding:
             return out

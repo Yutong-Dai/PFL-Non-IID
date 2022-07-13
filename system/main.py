@@ -38,8 +38,9 @@ torch.manual_seed(0)
 
 # hyper-params for Text tasks
 vocab_size = 98635
-max_len=200
-hidden_dim=32
+max_len = 200
+hidden_dim = 32
+
 
 def run(args):
 
@@ -55,9 +56,9 @@ def run(args):
         # Generate args.model
         if model_str == "mlr":
             if args.dataset == "mnist" or args.dataset == "fmnist":
-                args.model = Mclr_Logistic(1*28*28, num_classes=args.num_classes).to(args.device)
+                args.model = Mclr_Logistic(1 * 28 * 28, num_classes=args.num_classes).to(args.device)
             elif args.dataset == "Cifar10" or args.dataset == "Cifar100":
-                args.model = Mclr_Logistic(3*32*32, num_classes=args.num_classes).to(args.device)
+                args.model = Mclr_Logistic(3 * 32 * 32, num_classes=args.num_classes).to(args.device)
             else:
                 args.model = Mclr_Logistic(60, num_classes=args.num_classes).to(args.device)
 
@@ -72,15 +73,14 @@ def run(args):
             else:
                 args.model = FedAvgCNN(in_features=3, num_classes=args.num_classes, dim=1600).to(args.device)
 
-
-        elif model_str == "dnn": # non-convex
+        elif model_str == "dnn":  # non-convex
             if args.dataset == "mnist" or args.dataset == "fmnist":
-                args.model = DNN(1*28*28, 100, num_classes=args.num_classes).to(args.device)
+                args.model = DNN(1 * 28 * 28, 100, num_classes=args.num_classes).to(args.device)
             elif args.dataset == "Cifar10" or args.dataset == "Cifar100":
-                args.model = DNN(3*32*32, 100, num_classes=args.num_classes).to(args.device)
+                args.model = DNN(3 * 32 * 32, 100, num_classes=args.num_classes).to(args.device)
             else:
                 args.model = DNN(60, 20, num_classes=args.num_classes).to(args.device)
-        
+
         elif model_str == "resnet":
             args.model = torchvision.models.resnet18(pretrained=False, num_classes=args.num_classes).to(args.device)
 
@@ -88,16 +88,16 @@ def run(args):
             args.model = LSTMNet(hidden_dim=hidden_dim, vocab_size=vocab_size, num_classes=args.num_classes).to(args.device)
 
         elif model_str == "bilstm":
-            args.model = BiLSTM_TextClassification(input_size=vocab_size, hidden_size=hidden_dim, output_size=args.num_classes, 
-                        num_layers=1, embedding_dropout=0, lstm_dropout=0, attention_dropout=0, 
-                        embedding_length=hidden_dim).to(args.device)
+            args.model = BiLSTM_TextClassification(input_size=vocab_size, hidden_size=hidden_dim, output_size=args.num_classes,
+                                                   num_layers=1, embedding_dropout=0, lstm_dropout=0, attention_dropout=0,
+                                                   embedding_length=hidden_dim).to(args.device)
 
         elif model_str == "fastText":
             args.model = fastText(hidden_dim=hidden_dim, vocab_size=vocab_size, num_classes=args.num_classes).to(args.device)
 
         elif model_str == "TextCNN":
-            args.model = TextCNN(hidden_dim=hidden_dim, max_len=max_len, vocab_size=vocab_size, 
-                            num_classes=args.num_classes).to(args.device)
+            args.model = TextCNN(hidden_dim=hidden_dim, max_len=max_len, vocab_size=vocab_size,
+                                 num_classes=args.num_classes).to(args.device)
         else:
             raise NotImplementedError
 
@@ -164,23 +164,22 @@ def run(args):
             args.model.fc = nn.Identity()
             args.model = LocalModel(args.model, args.predictor)
             server = FedProto(args, i)
-            
+
         else:
             raise NotImplementedError
 
         server.train()
 
-        time_list.append(time.time()-start)
+        time_list.append(time.time() - start)
 
     print(f"\nAverage time cost: {round(np.average(time_list), 2)}s.")
-    
 
     # Global average
-    average_data(dataset=args.dataset, 
-                algorithm=args.algorithm, 
-                goal=args.goal, 
-                times=args.times, 
-                length=args.global_rounds/args.eval_gap+1)
+    average_data(dataset=args.dataset,
+                 algorithm=args.algorithm,
+                 goal=args.goal,
+                 times=args.times,
+                 length=args.global_rounds / args.eval_gap + 1)
 
     print("All done!")
 
@@ -191,8 +190,9 @@ if __name__ == "__main__":
     total_start = time.time()
 
     parser = argparse.ArgumentParser()
+    parser.add_argument('-ydp', "--use_yd_datapartition", type=int, default=1)
     # general
-    parser.add_argument('-go', "--goal", type=str, default="test", 
+    parser.add_argument('-go', "--goal", type=str, default="test",
                         help="The goal for this experiment")
     parser.add_argument('-dev', "--device", type=str, default="cuda",
                         choices=["cpu", "cuda"])
@@ -251,7 +251,7 @@ if __name__ == "__main__":
     parser.add_argument('-itk', "--itk", type=int, default=4000,
                         help="The iterations for solving quadratic subproblems")
     # FedAMP
-    parser.add_argument('-alk', "--alphaK", type=float, default=1.0, 
+    parser.add_argument('-alk', "--alphaK", type=float, default=1.0,
                         help="lambda/sqrt(GLOABL-ITRATION) according to the paper")
     parser.add_argument('-sg', "--sigma", type=float, default=1.0)
     # APFL
@@ -283,11 +283,11 @@ if __name__ == "__main__":
     print("Dataset: {}".format(args.dataset))
     print("Local model: {}".format(args.model))
     print("Using device: {}".format(args.device))
+    print("use yd partition:{}".format(args.use_yd_datapartition))
 
     if args.device == "cuda":
         print("Cuda device id: {}".format(os.environ["CUDA_VISIBLE_DEVICES"]))
     print("=" * 50)
-
 
     # if args.dataset == "mnist" or args.dataset == "fmnist":
     #     generate_mnist('../dataset/mnist/', args.num_clients, 10, args.niid)
@@ -300,12 +300,11 @@ if __name__ == "__main__":
     #     activities=[
     #         torch.profiler.ProfilerActivity.CPU,
     #         torch.profiler.ProfilerActivity.CUDA],
-    #     profile_memory=True, 
+    #     profile_memory=True,
     #     on_trace_ready=torch.profiler.tensorboard_trace_handler('./log')
     #     ) as prof:
     # with torch.autograd.profiler.profile(profile_memory=True) as prof:
     run(args)
 
-    
     # print(prof.key_averages().table(sort_by="cpu_time_total", row_limit=20))
     # print(f"\nTotal time cost: {round(time.time()-total_start, 2)}s.")

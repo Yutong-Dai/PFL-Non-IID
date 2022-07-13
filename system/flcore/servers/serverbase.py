@@ -8,6 +8,19 @@ import random
 
 from utils.data_utils import read_client_data
 
+import torch
+import numpy as np
+import random
+
+
+def setup_seed(seed):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+
 
 class Server(object):
     def __init__(self, args, times):
@@ -49,16 +62,25 @@ class Server(object):
         self.send_slow_rate = args.send_slow_rate
 
     def set_clients(self, args, clientObj):
+        acc_train = 0
+        acc_test = 0
         for i, train_slow, send_slow in zip(range(self.num_clients), self.train_slow_clients, self.send_slow_clients):
-            train_data = read_client_data(self.dataset, i, is_train=True)
-            test_data = read_client_data(self.dataset, i, is_train=False)
-            client = clientObj(args, 
-                            id=i, 
-                            train_samples=len(train_data), 
-                            test_samples=len(test_data), 
-                            train_slow=train_slow, 
-                            send_slow=send_slow)
+            if args.use_yd_datapartition:
+                train_data = read_client_data(self.dataset, i, is_train=True, yd=True)
+                test_data = read_client_data(self.dataset, i, is_train=False, yd=True)
+            else:
+                train_data = read_client_data(self.dataset, i, is_train=True)
+                test_data = read_client_data(self.dataset, i, is_train=False)
+            client = clientObj(args,
+                               id=i,
+                               train_samples=len(train_data),
+                               test_samples=len(test_data),
+                               train_slow=train_slow,
+                               send_slow=send_slow)
             self.clients.append(client)
+            acc_train += len(train_data)
+            acc_test += len(test_data)
+        print("Total Trian samples", acc_train, "Total test samples", acc_test)
 
     # random select slow clients
     def select_slow_clients(self, slow_rate):
@@ -108,7 +130,7 @@ class Server(object):
         self.global_model = copy.deepcopy(self.uploaded_models[0])
         for param in self.global_model.parameters():
             param.data.zero_()
-            
+
         for w, client_model in zip(self.uploaded_weights, self.uploaded_models):
             self.add_parameters(w, client_model)
 
@@ -133,7 +155,7 @@ class Server(object):
         model_path = os.path.join("models", self.dataset)
         model_path = os.path.join(model_path, self.algorithm + "_server" + ".pt")
         return os.path.exists(model_path)
-        
+
     def save_results(self):
         algo = self.dataset + "_" + self.algorithm
         result_path = "../results/"
@@ -164,8 +186,8 @@ class Server(object):
         tot_auc = []
         for c in self.selected_clients:
             ct, ns, auc = c.test_metrics()
-            tot_correct.append(ct*1.0)
-            tot_auc.append(auc*ns)
+            tot_correct.append(ct * 1.0)
+            tot_auc.append(auc * ns)
             num_samples.append(ns)
 
         ids = [c.id for c in self.selected_clients]
@@ -178,7 +200,7 @@ class Server(object):
         for c in self.selected_clients:
             cl, ns = c.train_metrics()
             num_samples.append(ns)
-            losses.append(cl*1.0)
+            losses.append(cl * 1.0)
 
         ids = [c.id for c in self.selected_clients]
 
@@ -186,20 +208,21 @@ class Server(object):
 
     # evaluate selected clients
     def evaluate(self, acc=None, loss=None):
+        # a list of ids, num_samples, tot_correct, tot_auc
         stats = self.test_metrics()
         stats_train = self.train_metrics()
 
-        test_acc = sum(stats[2])*1.0 / sum(stats[1])
-        test_auc = sum(stats[3])*1.0 / sum(stats[1])
-        train_loss = sum(stats_train[2])*1.0 / sum(stats_train[1])
+        test_acc = sum(stats[2]) * 1.0 / sum(stats[1])
+        test_auc = sum(stats[3]) * 1.0 / sum(stats[1])
+        train_loss = sum(stats_train[2]) * 1.0 / sum(stats_train[1])
         accs = [a / n for a, n in zip(stats[2], stats[1])]
         aucs = [a / n for a, n in zip(stats[3], stats[1])]
-        
+
         if acc == None:
             self.rs_test_acc.append(test_acc)
         else:
             acc.append(test_acc)
-        
+
         if loss == None:
             self.rs_train_loss.append(train_loss)
         else:
